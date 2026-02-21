@@ -4,6 +4,14 @@ An AI agent that helps you manage your todo list. Built on top of the popular [T
 
 <video src=".docs/media/todomvc_ai_agent_demo.mp4" controls width="100%"></video>
 
+## 🎬 Demo
+
+<p align="center">
+  <a href="https://youtu.be/8aHSc9F6aws">
+    <img src="https://img.youtube.com/vi/8aHSc9F6aws/maxresdefault.jpg" width="800">
+  </a>
+</p>
+
 ---
 
 ## Prerequisites
