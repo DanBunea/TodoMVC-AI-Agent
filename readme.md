@@ -35,7 +35,7 @@ or:
 clj -A:dev -X dev/-main
 ```
 
-Then open [http://localhost:7777](http://localhost:7777).
+Then open the app at **[http://localhost:7777/ds/nds/todomvc.todomvc-page/t/init](http://localhost:7777/ds/nds/todomvc.todomvc-page/t/init)** (starter point).
 
 ### Run tests
 
