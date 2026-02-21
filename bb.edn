@@ -1,0 +1,8 @@
+{:tasks
+ {dev            {:doc "Starts the dev repl"
+                  :task (shell "clj -A:dev -X dev/-main")}
+  test           {:doc "Run the tests"
+                  :task (clojure "-M:test")}
+
+  format:check   (shell "cljfmt check")
+  format         (shell "cljfmt fix")}}

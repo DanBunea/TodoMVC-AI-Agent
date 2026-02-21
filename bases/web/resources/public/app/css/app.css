@@ -1,0 +1,74 @@
+:root {
+    --mdc-typography-font-family: "Poppins";
+    --mdc-shape-small-component-radius: 20px;
+    --mdc-shape-medium-component-radius: 20px;
+    --mdc-shape-large-component-radius: 20px;
+    --mdc-theme-primary: #109cf1;
+    --mdc-theme-secondary: #a70042;
+    --mdc-theme-surface: #fff;
+    --mdc-theme-on-primary: #fff;
+    --color-action: #0588b7;
+    --color-error: red;
+    --color-primary: #192a3e;
+    --color-secondary: #707683;
+    --color-tertiary: rgba(51, 77, 99, 0.5);
+    --color-hover: #169bca;
+    --color-active: #0677a4;
+    --color-selected: #829ec4;
+    --typography-font-family: "Poppins";
+    --typography-small-8-regular-font-size: 8px;
+    --typography-small-9-regular-font-size: 9px;
+    --typography-small-10-regular-font-size: 10px;
+    --typography-really-small-regular-font-size: 11px;
+    --typography-small-regular-font-size: 12px;
+    --typography-body-regular-font-size: 13px;
+    --typography-subtitle-semibold-font-size: 16px;
+    --typography-title-1-semibold-font-size: 24px;
+    --typography-font-weight-ultralight: 100;
+    --typography-font-weight-light: 300;
+    --typography-font-weight-regular: 400;
+    --typography-font-weight-medium: 500;
+    --typography-font-weight-bold: 600;
+    --typography-font-weight-700: 700;
+    --typography-font-weight-800: 800;
+    --typography-font-weight-900: 900;
+    --layout-top-bar-height: 100;
+    --background-color-level-1: #dbeafe;
+    --background-color-level-2: #bfdbfe;
+    --background-color-level-3: #93c5fd;
+    --background-color-level-4: #60a5fa;
+    --background-agent-muted: rgba(112, 118, 131, 0.06);
+}
+
+body {
+    font-family: "Poppins";
+    font-size: var(--typography-body-regular-font-size);
+    font-weight: var(--typography-font-weight-regular);
+    padding: 0;
+    margin: 0;
+    color: var(--color-primary)
+}
+
+input,
+textarea,
+select {
+    font-size: 16px;
+}
+
+/* #ai */
+.reasoning {
+    background-color: var(--background-agent-muted);
+    color: var(--color-secondary);
+    font-size: var(--typography-small-regular-font-size);
+}
+
+.tools {
+    background-color: var(--background-agent-muted);
+    color: var(--color-secondary);
+    font-size: var(--typography-small-regular-font-size);
+}
+
+.tool-call-payload {
+    font-family: ui-monospace, "Cascadia Mono", "SF Mono", monospace;
+    font-size: var(--typography-small-regular-font-size);
+}

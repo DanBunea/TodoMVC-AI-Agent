@@ -1,0 +1,124 @@
+/* This file is for your main application css. */
+@charset "UTF-8";
+
+@import "./app.css";
+@import "./layout.css";
+
+body {
+    --mdc-shape-small: 20px;
+    --mdc-shape-medium: 20px;
+    --mdc-shape-large: 20px;
+    -webkit-text-size-adjust: 100%;
+}
+
+.secondary {
+    color: var(--color-secondary);
+    font-weight: var(--typography-font-weight-light);
+    font-size: var(--typography-small-regular-font-size);
+}
+
+.expandable-header {
+    color: lightgrey;
+}
+
+.shimmer-effect {
+    color: lightgrey;
+    margin: 0 auto;
+    margin-bottom: 0;
+}
+
+.shimmer-effect {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.1);
+    background: -webkit-gradient(linear, left top, right top, from(#222), to(#222), color-stop(0.5, #fff));
+    background: -moz-gradient(linear, left top, right top, from(#222), to(#222), color-stop(0.5, #fff));
+    background: gradient(linear, left top, right top, from(#222), to(#222), color-stop(0.5, #fff));
+    -webkit-background-size: 125px 100%;
+    -moz-background-size: 125px 100%;
+    background-size: 125px 100%;
+    -webkit-background-clip: text;
+    -moz-background-clip: text;
+    background-clip: text;
+    -webkit-animation-name: shimmer-effect;
+    -moz-animation-name: shimmer-effect;
+    animation-name: shimmer-effect;
+    -webkit-animation-duration: 2s;
+    -moz-animation-duration: 2s;
+    animation-duration: 2s;
+    -webkit-animation-iteration-count: infinite;
+    -moz-animation-iteration-count: infinite;
+    animation-iteration-count: infinite;
+    background-repeat: no-repeat;
+    background-position: 0 0;
+    background-color: #222;
+}
+
+@-moz-keyframes shimmer-effect {
+    0% {
+        background-position: top left;
+    }
+    100% {
+        background-position: top right;
+    }
+}
+
+@-webkit-keyframes shimmer-effect {
+    0% {
+        background-position: top left;
+    }
+    100% {
+        background-position: top right;
+    }
+}
+
+@-o-keyframes shimmer-effect {
+    0% {
+        background-position: top left;
+    }
+    100% {
+        background-position: top right;
+    }
+}
+
+@keyframes shimmer-effect {
+    0% {
+        background-position: top left;
+    }
+    100% {
+        background-position: top right;
+    }
+}
+
+/* Button styles - used by counter */
+.btn {
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    padding: 8px 16px;
+    margin: 0 0px;
+    transition: background-color 0.6s ease;
+    text-transform: uppercase;
+}
+
+.contained {
+    background-color: var(--mdc-theme-primary);
+    color: #fff;
+}
+
+.contained:hover {
+    background-color: #2f3e9e;
+}
+
+.contained-disabled {
+    background-color: #f0f0f0;
+    color: #fff;
+}
+
+.contained-disabled:hover {}
+
+pre {
+    background-color: #EBEFF2;
+    padding: 8px;
+}
