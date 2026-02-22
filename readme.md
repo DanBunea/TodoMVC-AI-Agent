@@ -37,6 +37,10 @@ clj -A:dev -X dev/-main
 
 Then open the app at **[http://localhost:7777/ds/nds/todomvc.todomvc-page/t/init](http://localhost:7777/ds/nds/todomvc.todomvc-page/t/init)** (starter point).
 
+### Start the server from the REPL
+
+Open `development/src-dev/dev.cljc` in your editor, connect your REPL to the `dev` namespace, then evaluate `(-main)` to start the server.
+
 ### Run tests
 
 ```bash
