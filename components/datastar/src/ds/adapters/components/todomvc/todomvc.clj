@@ -3,7 +3,8 @@
    Renders the TodoMVC UI using hiccup with DataStar attributes for reactivity."
   (:require
    [ds.adapters.components.expandable :as exp]
-   [charred.api :as charred]))
+   [charred.api :as charred]
+   [hyperfiddle.rcf :refer [tests]]))
 
 ;; ---------------------------------------------------------------------------
 ;; Helpers
@@ -234,15 +235,20 @@
 (defn- todo-item
   "Renders a single todo list item. Shows an edit input when the todo
    is the one being edited; otherwise shows the view mode with checkbox,
-   label (double-click to edit), and delete button."
+   label (double-click to edit), and delete button.
+   Each :li has a stable :id (todo-<todo-id>) so DOM patching (e.g. morphdom)
+   matches items by identity when the list is filtered, avoiding wrong
+   completion state on reordered/filtered items."
   [component-id todo editing-id]
   (let [is-editing (= (str (:id todo)) (str editing-id))
         todo-id    (str (:id todo))]
-    [:li {:style (merge
-                  {:border-bottom "1px solid #ededed"
-                   :position      "relative"}
-                  (when (:completed todo)
-                    {:color "#949494"}))}
+    [:li (merge
+          {:id    (str "todo-" todo-id)
+           :style (merge
+                   {:border-bottom "1px solid #ededed"
+                    :position      "relative"}
+                   (when (:completed todo)
+                     {:color "#949494"}))} )
      (if is-editing
        ;; ---- Edit mode ----
        [:input {:type      "text"
@@ -439,3 +445,43 @@
      (chat-modal-overlay component-id ctx)])
             ;;  ]]
   )
+
+;; ---------------------------------------------------------------------------
+;; Tests
+;; ---------------------------------------------------------------------------
+
+(defn- checkbox-checked-values-in-hiccup
+  "Walks hiccup tree and returns a seq of :checked values for every
+   [:input {:type \"checkbox\" :checked v}] (used to test todo list rendering).
+   Handles both vectors and sequences (e.g. lazy seq from `for`) so todo list
+   items are found."
+  [hiccup]
+  (when (sequential? hiccup)
+    (if (vector? hiccup)
+      (let [tag   (first hiccup)
+            attrs (second hiccup)
+            kids  (if (map? attrs) (drop 2 hiccup) (rest hiccup))]
+        (concat (when (and (= tag :input) (map? attrs) (= (:type attrs) "checkbox"))
+                   [(:checked attrs)])
+                (mapcat checkbox-checked-values-in-hiccup kids)))
+      (mapcat checkbox-checked-values-in-hiccup hiccup))))
+
+(tests
+ "Active filter: with 5 items (a,b,c,d,e), b and c completed, only a,d,e are
+  shown and each is rendered as unchecked (bug was d and e showing as complete)."
+ (def five-todos
+   [{:id "1" :text "a" :completed false}
+    {:id "2" :text "b" :completed true}
+    {:id "3" :text "c" :completed true}
+    {:id "4" :text "d" :completed false}
+    {:id "5" :text "e" :completed false}])
+ (def ctx {:component-id "test-todomvc"
+           :memory       {:todos five-todos :filter "active"}
+           :state        :listing})
+ (def hiccup (todomvc ctx))
+ ;; Only todo list item checkboxes (toggle-all is also a checkbox; we want the 3 visible items)
+ (def todo-checkboxes
+   (->> (checkbox-checked-values-in-hiccup hiccup)
+        (drop 1))) ; drop toggle-all checkbox
+ (count todo-checkboxes) := 3
+ (every? false? todo-checkboxes) := true)
