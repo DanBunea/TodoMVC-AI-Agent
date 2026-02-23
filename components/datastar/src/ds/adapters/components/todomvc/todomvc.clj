@@ -238,7 +238,8 @@
   [component-id todo editing-id]
   (let [is-editing (= (str (:id todo)) (str editing-id))
         todo-id    (str (:id todo))]
-    [:li {:style (merge
+    [:li {:id    (str "todo-" todo-id)
+          :style (merge
                   {:border-bottom "1px solid #ededed"
                    :position      "relative"}
                   (when (:completed todo)
@@ -333,7 +334,7 @@
                       :box-shadow "0 2px 4px 0 rgba(0,0,0,0.2), 0 25px 50px 0 rgba(0,0,0,0.1)"
                       :max-width  "550px"}}
 
-     ;; ---- Header ----
+      ;; ---- Header ----
       [:header
        [:h1 {:style {:font-size   "80px"
                      :font-weight "200"
@@ -357,11 +358,11 @@
                                       "if(event.key==='Enter'){el.value='';"
                                       (post-action component-id "add") "}")}]]
 
-     ;; ---- Main section (visible only when todos exist) ----
+      ;; ---- Main section (visible only when todos exist) ----
       (when (seq todos)
         [:section {:style {:position   "relative"
                            :border-top "1px solid #e6e6e6"}}
-        ;; Toggle all
+         ;; Toggle all
          [:div {:style {:display     "flex"
                         :align-items "center"
                         :border-bottom "1px solid #ededed"}}
@@ -377,14 +378,14 @@
                            :padding   "10px"}}
            "Mark all as complete"]]
 
-        ;; Todo list
+         ;; Todo list
          [:ul {:style {:list-style "none"
                        :padding    "0"
                        :margin     "0"}}
           (for [todo visible-todos]
             (todo-item component-id todo editing-id))]])
 
-     ;; ---- Footer (visible only when todos exist) ----
+      ;; ---- Footer (visible only when todos exist) ----
       (when (seq todos)
         [:footer {:style {:display         "flex"
                           :align-items     "center"
@@ -393,12 +394,12 @@
                           :color           "#777"
                           :font-size       "14px"
                           :border-top      "1px solid #e6e6e6"}}
-        ;; Items left
+         ;; Items left
          [:span
           [:strong (str active)]
           (str " item" (when (not= active 1) "s") " left")]
 
-        ;; Filter buttons
+         ;; Filter buttons
          [:ul {:style {:display    "flex"
                        :list-style "none"
                        :padding    "0"
@@ -419,7 +420,7 @@
                             {:border-color "rgba(175, 47, 47, 0.2)"}))}
               label]])]
 
-        ;; Clear completed
+         ;; Clear completed
          (when (pos? completed)
            [:button {:data-on-click (post-action component-id "clear_completed")
                      :type  "button"
@@ -437,5 +438,5 @@
 
      ;; Chat modal overlay
      (chat-modal-overlay component-id ctx)])
-            ;;  ]]
+  ;;  ]]
   )
