@@ -3,6 +3,7 @@
 
    [logging.interface :as log]
    [agents.interface :refer [agents verbose-trace-event-names]]
+   [agents.use-cases.chat.todomvc-agent :as todomvc-agent]
    [ds.adapters.handlers.connected-component-handler :refer [send-ui!]]
    [clojure.core.async :refer [go-loop go >! <! >!!]]
    [ds.adapters.components.assistant.common :as rcc :refer [loading-container]]
@@ -54,13 +55,21 @@
              :agents.domain.chat/llm-reply-received
              (rh/llm-reply-received event-payload)
 
+             :agents.domain.chat/llm-error
+             (let [display-msg (rh/llm-error-display-message event-payload)
+                   msg {:id (str (:id event-payload))
+                        :role "assistant"
+                        :content display-msg}]
+               (todomvc-agent/add-chat-message (str chat-id) msg)
+               (rh/llm-error event-payload))
+
              ;; Unknown event - return empty effects
              (do (println "Unknown event received:" event-name "with payload:" event-payload)
                  []))
            ((fn send-replies-to-ui! [component-responses]
               #_(let [valid-component-responses (filter first component-responses)]
                   (doseq [[effect-name & effect-args] valid-component-responses]))
-              (send-ui! chat-id component-responses))))))))
+              (send-ui! (str chat-id) component-responses))))))))
 
 ;; Initialize the event listener when namespace is loaded
 (defonce out-listener-started? (atom false))
