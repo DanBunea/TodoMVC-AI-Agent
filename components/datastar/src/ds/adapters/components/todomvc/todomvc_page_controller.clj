@@ -5,4 +5,5 @@
 (def machine
   {:id :todomvc-page
    :initial :displayed
-   :states {:displayed {}}})
+   ;; taia.ds drops unhandled events with a warning; the page GET sends INIT
+   :states {:displayed {:on {:INIT {}}}}})

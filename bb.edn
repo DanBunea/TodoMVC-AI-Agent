@@ -1,8 +1,16 @@
-{:tasks
+{:paths ["scripts"]
+ :tasks
  {dev            {:doc "Starts the dev repl"
                   :task (shell "clj -A:dev -X dev/-main")}
   test           {:doc "Run the tests"
                   :task (clojure "-M:test")}
+
+  e2e-test       {:doc "Playwright UI suite (e2e/tests), no LLM calls. Starts the app on 7799. Usage: bb e2e-test [spec] [--headed]; needs Node >= 18"
+                  :requires ([e2e])
+                  :task (e2e/main :ui *command-line-args*)}
+  agent-e2e-test {:doc "Playwright agent suite (e2e/tests-agent), real OpenAI calls; needs OPENAI_API_KEY. Usage: bb agent-e2e-test [spec] [--headed]"
+                  :requires ([e2e])
+                  :task (e2e/main :agent *command-line-args*)}
 
   format:check   (shell "cljfmt check")
   format         (shell "cljfmt fix")}}

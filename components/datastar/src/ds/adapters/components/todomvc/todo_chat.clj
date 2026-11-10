@@ -1,10 +1,10 @@
 (ns ds.adapters.components.todomvc.todo-chat
   "Chat messages component - renders chat messages and input for a specific chat.
-   Loaded via data-on-load from the todomvc chat modal overlay."
+   Loaded via data-init from the todomvc chat modal overlay."
   (:require
    [charred.api :as charred]
    [ds.adapters.handlers.agent-output-handler :as aoh]
-   [ds.adapters.components.assistant.common :as rcc :refer [loading-container]]
+   [ds.adapters.components.assistant.loading :refer [loading-container]]
    [ds.adapters.components.assistant.tool-components :as th]
    [ds.adapters.components.assistant.replies :as rh]))
 
@@ -80,25 +80,27 @@
       (let [input-id (str component-id "-chat-input")]
         [:input {:id          input-id
                  :type        "text"
+                 "data-testid" "chat-input"
                  :placeholder "Type a message..."
                  :disabled    completing?
                  :style       {:flex "1" :padding "10px 16px" :border "1px solid #ddd"
                                :border-radius "20px" :font-size "14px" :outline "none"
                                :opacity (if completing? "0.5" "1")
                                :cursor  (if completing? "not-allowed" "text")}
-                 :data-on-input "$chatInputText=el.value"
-                 :data-on-keydown (str "if(event.key==='Enter'&&el.value.trim()){"
+                 "data-on:input" "$chatInputText=el.value"
+                 "data-on:keydown" (str "if(evt.key==='Enter'&&el.value.trim()){"
                                        "el.value='';"
                                        "@post('/ds/nds-connect/todomvc.todo-chat/" component-id  "/SEND_MESSAGE')"
                                        "}")}])
       (when-not completing?
         [:button {:type "button"
+                  "data-testid" "chat-send"
                   :style {:background "#4a90d9" :color "#fff" :border "none"
                           :border-radius "50%" :width "36px" :height "36px"
                           :font-size "16px" :cursor "pointer" :display "flex"
                           :align-items "center" :justify-content "center"
                           :flex-shrink "0"}
-                  :data-on-click (str "var inp=document.getElementById('"
+                  "data-on:click" (str "var inp=document.getElementById('"
                                       component-id "-chat-input');"
                                       "if(inp&&inp.value.trim()){"
                                       "$chatInputText=inp.value;"
@@ -109,12 +111,13 @@
       (when completing?
         [:button {:type    "button"
                   :title   "Stop"
+                  "data-testid" "chat-stop"
                   :style   {:background "#e74c3c" :color "#fff" :border "none"
                             :border-radius "50%" :width "36px" :height "36px"
                             :font-size "16px" :cursor "pointer" :display "flex"
                             :align-items "center" :justify-content "center"
                             :flex-shrink "0"}
-                  :data-on-click (post-action component-id "stop_completion_requested")}
+                  "data-on:click" (post-action component-id "stop_completion_requested")}
          "■"])]]))
 
 (defn intialize-out-listener! []
