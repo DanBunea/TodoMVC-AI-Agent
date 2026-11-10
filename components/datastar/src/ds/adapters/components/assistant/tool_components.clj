@@ -1,5 +1,6 @@
 (ns ds.adapters.components.assistant.tool-components
   (:require
+   [ds.adapters.components.assistant.loading :as loading]
    [ds.adapters.components.expandable :as exp]
    [clojure.string :as str]))
 
@@ -23,7 +24,8 @@
 
 (defn tools-called [{:keys [id content]}]
   [:div.cl-12.cs-12
-   {:id (partial-tools-div-id id (:name content)) #_(str "partial-tools-" id)}
+   {:id (partial-tools-div-id id (:name content)) #_(str "partial-tools-" id)
+    "data-testid" "tool-call"}
    (exp/expandable
     (str #_role #_": " (:name content))
     [:div.cs-12.cl-12
@@ -36,7 +38,7 @@
       (with-out-str (clojure.pprint/pprint (select-keys content [:name :arguments :result])))]])])
 
 (defn message-tool-call [id content]
-  [:broadcast-elements!
+  [:patch
    (tools-called {:id id :content content})
    {:d*/selector "#messages"
     :d*/patch-mode :d*/pm-append}])
@@ -46,15 +48,15 @@
         chat-id (:ai-chat/id event-trace)]
     (cond
       (= :started status)
-      [[:broadcast-hide-loading chat-id]
-       [:broadcast-elements!
+      [(loading/hide-loading chat-id)
+       [:patch
         (tools-started {:id id
                         :tool-name tool-name})
         {:d*/selector (str "#messages")
          :d*/patch-mode :d*/pm-append}]]
 
       (= :delta status)
-      [[:broadcast-elements!
+      [[:patch
         (partial-tools-reply {:reply reply})
         {:d*/selector (str "#" (partial-tools-div-id id tool-name))
 
@@ -67,7 +69,7 @@
 
 (defn tool-applied [event-payload]
   (let [{:keys [id tool-call-msg tool-call-output-msg result]} event-payload]
-    [[:broadcast-elements!
+    [[:patch
       (tools-called {:id id
                      :content {:name (-> tool-call-msg
                                          :content

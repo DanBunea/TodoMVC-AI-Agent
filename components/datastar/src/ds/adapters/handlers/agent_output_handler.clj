@@ -3,9 +3,8 @@
 
    [logging.interface :as log]
    [agents.interface :refer [agents verbose-trace-event-names]]
-   [ds.adapters.handlers.connected-component-handler :refer [send-ui!]]
-   [clojure.core.async :refer [go-loop go >! <! >!!]]
-   [ds.adapters.components.assistant.common :as rcc :refer [loading-container]]
+   [taia.ds.datastar.interface :as ds]
+   [clojure.core.async :refer [go-loop <!]]
    [ds.adapters.components.assistant.reasoning :as reash]
    [ds.adapters.components.assistant.tool-components :as th]
    [ds.adapters.components.assistant.replies :as rh]))
@@ -13,12 +12,14 @@
 (defn- destructure-event-trace [event-payload]
   (let [{:keys [event-trace]} event-payload
         chat-id (-> event-trace
-                    :ai-chat/id)]
-    (merge event-trace {:chat-id chat-id})))
+                    :ai-chat/id)
+        user-id (get-in event-trace [:user :user/id])]
+    (merge event-trace {:chat-id chat-id
+                        :user-id user-id})))
 
 (defn- handle-out-event [[event-name event-payload]]
   (let [mulog-ctx (:mulog/ctx event-payload)
-        {:keys [chat-id]} (destructure-event-trace event-payload)
+        {:keys [chat-id user-id]} (destructure-event-trace event-payload)
         trace-level (if (contains? verbose-trace-event-names event-name) :verbose :info)]
     (log/with-context mulog-ctx
       (log/trace-at
@@ -57,10 +58,9 @@
              ;; Unknown event - return empty effects
              (do (println "Unknown event received:" event-name "with payload:" event-payload)
                  []))
+           ;; delivered on the SSE stream the chat opened under [chat-id user-id]
            ((fn send-replies-to-ui! [component-responses]
-              #_(let [valid-component-responses (filter first component-responses)]
-                  (doseq [[effect-name & effect-args] valid-component-responses]))
-              (send-ui! chat-id component-responses))))))))
+              (ds/send-ui! chat-id user-id component-responses))))))))
 
 ;; Initialize the event listener when namespace is loaded
 (defonce out-listener-started? (atom false))

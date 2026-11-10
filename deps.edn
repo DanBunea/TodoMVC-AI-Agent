@@ -1,10 +1,7 @@
 {:paths ["resources"
          "components/logging/src"
-         "components/state.machines/resources"
-         "components/state.machines/src"
          "components/datastar/resources"
          "components/datastar/src"
-         "components/datastar/test"
 
          "components/llm/resources"
          "components/llm/src"
@@ -53,10 +50,8 @@
         camel-snake-kebab/camel-snake-kebab {:mvn/version "0.4.3"}
         babashka/fs {:mvn/version "0.5.26"}
 
-         ;; for datastar
-        dev.data-star.clojure/sdk {:mvn/version "1.0.0-RC1"}
-        dev.data-star.clojure/ring {:mvn/version "1.0.0-RC1"}
-        dev.onionpancakes/chassis  {:mvn/version "1.0.365"}
+        ;; datastar components, handlers, state machines + datastar.js (RC.8)
+        io.github.danbunea/taia.ds {:mvn/version "0.2.0"}
         com.cnuernber/charred      {:mvn/version "1.034"}}
 
  :aliases {:dev
@@ -72,7 +67,6 @@
            {:jvm-opts ["-Dhyperfiddle.rcf.generate-tests=true"]
 
             :extra-paths ["development/test"
-                          "components/state.machines/test"
                           "bases/server/test"]
             :extra-deps  {lambdaisland/kaocha {:mvn/version "1.60.945"}
                           com.datomic/local    {:mvn/version "1.0.267"}}

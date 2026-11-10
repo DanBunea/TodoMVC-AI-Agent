@@ -1,5 +1,6 @@
 (ns ds.adapters.components.assistant.reasoning
   (:require
+   [ds.adapters.components.assistant.loading :as loading]
    [clojure.string :as str]
    [charred.api :as charred]))
 
@@ -35,7 +36,7 @@
                :display "flex"
                :align-items "center"
                :gap "8px"}
-       :data-on-click (str "$['" expanded-signal "'] = !$['" expanded-signal "']")}
+       "data-on:click" (str "$['" expanded-signal "'] = !$['" expanded-signal "']")}
       ;; Dynamic title
       [:span {:data-text title-expr} "Thinking..."]
       [:i.material-symbols-outlined.expand-icon
@@ -57,24 +58,24 @@
         reasoning-id (str id "-" completion-step)]
     (cond
       (= :started status)
-      [[:broadcast-hide-loading chat-id]
-       [:broadcast-elements!
+      [(loading/hide-loading chat-id)
+       [:patch
         (reasoning-expandable {:id reasoning-id
                                :start-time-ms (System/currentTimeMillis)})
         {:d*/selector (str "#messages")
          :d*/patch-mode :d*/pm-append}]]
 
       (= :thinking status)
-      [[:broadcast-elements!
+      [[:patch
         (partial-reasoning {:reply reply})
         {:d*/selector (str "#reasoning-" reasoning-id)
          :d*/patch-mode :d*/pm-append}]]
 
       (= :finished status)
-      [[:broadcast-loading chat-id]
-       [:broadcast-elements!
+      [(loading/show-loading chat-id)
+       [:patch
         [:div {:style {:display "none"}
-               :data-on-load (str "$reasoning_duration_" reasoning-id " = Math.round((Date.now() - $reasoning_start_" reasoning-id ") / 1000); "
+               "data-init" (str "$reasoning_duration_" reasoning-id " = Math.round((Date.now() - $reasoning_start_" reasoning-id ") / 1000); "
                                   "$reasoning_state_" reasoning-id " = 'finished'; "
                                   "$expanded_reasoning_" reasoning-id " = false")}]
         {:d*/selector "#messages"

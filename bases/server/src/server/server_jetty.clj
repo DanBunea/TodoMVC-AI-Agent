@@ -21,8 +21,7 @@
   ;;  [auth-middleware.interface :refer [wrap-auth0-authentication]]
    [com.brunobonacci.mulog :as u]
    [ring.util.response :as res]
-   [ds.interface :refer [handler-component-event
-                         handler-connected-component-connect]])
+   [taia.ds.datastar.interface :as ds])
   (:import
    (org.eclipse.jetty.server.handler.gzip GzipHandler)
    ;; NOTE: Jetty 11+ has different websocket config classes
@@ -74,6 +73,26 @@ with target specified by map `m`. Target values are coerced to string with `str`
        (handler request respond raise)))))
 
 ;; User middleware
+(defn- stand-in-user
+  "Stand-in user while there is no authentication. taia.ds keys SSE streams
+   and pushes by [component-id user-id], so every request needs a user id.
+   The `dev-user` cookie picks another one: the e2e suite gives every test
+   its own, and so its own todo list and chats."
+  [request]
+  {:user/id (or (not-empty (get-in (cookies/cookies-request request) [:cookies "dev-user" :value]))
+                "local-user")})
+
+(defn- ->logged-user [request user-info language]
+  (if user-info
+    {:user/id (get user-info :sub)
+     :user/name (get user-info :given_name)
+     :user/groups (get user-info :groups)
+     :user/email (get user-info :email)
+     :user/language (if (= "en" language) :en
+                        :fr)
+     :logout-url (:logout-url user-info)}
+    (stand-in-user request)))
+
 (defn wrap-logged-user
   "Middleware that extracts the logged user from session and adds it to request params"
   [handler]
@@ -84,14 +103,7 @@ with target specified by map `m`. Target values are coerced to string with `str`
            session-data (when session-id (get @!session-store session-id))
            user-info (get-in session-data [:user-info])
            language (get-in request [:query-params "language"])
-           logged-user (when user-info
-                         {:user/id (get user-info :sub)
-                          :user/name (get user-info :given_name)
-                          :user/groups (get user-info :groups)
-                          :user/email (get user-info :email)
-                          :user/language (if (= "en" language) :en
-                                             :fr)
-                          :logout-url (:logout-url user-info)})]
+           logged-user (->logged-user request user-info language)]
        (u/trace
         (str (str/upper-case (name (:request-method request))) " " (get request :uri))
         [:logged-user-id (str (:user/id logged-user))]
@@ -103,18 +115,30 @@ with target specified by map `m`. Target values are coerced to string with `str`
            session-data (when session-id (get @!session-store session-id))
            user-info (get-in session-data [:user-info])
            language (get-in request [:query-params "language"])
-           logged-user (when user-info
-                         {:user/id (get user-info :sub)
-                          :user/name (get user-info :given_name)
-                          :user/groups (get user-info :groups)
-                          :user/email (get user-info :email)
-                          :user/language (if (= "en" language) :en
-                                             :fr)
-                          :logout-url (:logout-url user-info)})]
+           logged-user (->logged-user request user-info language)]
        (u/trace
         (str (str/upper-case (name (:request-method request))) " " (get request :uri))
         [:logged-user-id (str (:user/id logged-user))]
         (handler (assoc-in request [:params :logged-user] logged-user) respond raise))))))
+
+(def ^:private ds-middleware
+  [wrap-keyword-params
+   rmparams/parameters-middleware
+   wrap-logged-user
+   #(wrap-session % wrap-session-options)
+   ;; #(wrap-auth0-authentication % (:keycloak config))
+   ])
+
+(defn- home-page
+  "GET / renders the TodoMVC page component (its INIT) in-process, the same
+   page as /ds/nds/todomvc.todomvc-page/t/init, at a canonical URL."
+  ([req]
+   (-> (ds/process-component-event req "todomvc.todomvc-page" "t" "INIT" nil)
+       :html
+       ds/html-response))
+  ([req respond raise]
+   (try (respond (home-page req))
+        (catch Exception e (raise e)))))
 
 (defn app-routes [config]
   (reitit/ring-handler
@@ -123,18 +147,16 @@ with target specified by map `m`. Target values are coerced to string with `str`
       ["/ping"
        {:get {:summary "Ping"
               :handler (fn [_] {:status 200 :body {:ping :pong}})}}]]
+     ["/"
+      {:middleware ds-middleware
+       :get        {:handler home-page}}]
      ["/ds"
-      {:middleware [wrap-keyword-params
-                    rmparams/parameters-middleware
-                    wrap-logged-user
-                    #(wrap-session % wrap-session-options)
-                    ;; #(wrap-auth0-authentication % (:keycloak config))
-                    ]}
+      {:middleware ds-middleware}
       ["/nds"
-       ["/:component/:component-id/:controller/:event" {:handler #'handler-component-event}]
-       ["/:component/:component-id/:event" {:handler #'handler-component-event}]]
+       ["/:component/:component-id/:controller/:event" {:handler ds/handler-component-event}]
+       ["/:component/:component-id/:event" {:handler ds/handler-component-event}]]
       ["/nds-connect"
-       ["/:component/:component-id/:event" {:handler #'handler-connected-component-connect}]]]]
+       ["/:component/:component-id/:event" {:handler ds/handler-connected-component-connect}]]]]
     {:data {:muuntaja   m/instance
             :middleware [rrmm/format-middleware]}})
    (reitit/routes
@@ -145,6 +167,7 @@ with target specified by map `m`. Target values are coerced to string with `str`
         ;; (wrap-auth0-authentication (:env config)) ; 4. auth 
         (wrap-session wrap-session-options) ; 3. session
         (wrap-resource (:resources-path config))
+        (wrap-resource "datastar") ; /js/datastar.js (RC.8) + /js/sse-reconnect.js from taia.ds
         (wrap-content-type)))))
 
 (defn middleware [config entrypoint]

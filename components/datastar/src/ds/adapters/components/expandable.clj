@@ -20,7 +20,7 @@
                 :display "flex"
                 :align-items "center"
                 :gap "8px"}
-        :data-on-click (str "$['" signal-name "'] = !$['" signal-name "']")}
+        "data-on:click" (str "$['" signal-name "'] = !$['" signal-name "']")}
        (when title title)
        [:i.material-symbols-outlined.expand-icon
         {:style {:vertical-align "middle"

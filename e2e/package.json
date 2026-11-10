@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "name": "todomvc-ai-agent-e2e",
+  "devDependencies": {
+    "@playwright/test": "1.58.2"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "test:agent": "playwright test --config playwright-agent.config.ts"
+  }
+}

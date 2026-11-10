@@ -8,6 +8,10 @@
    [hyperfiddle.rcf :refer [tests]]
    [spy.core :as spy]))
 
+(def empty-reply-after-tools
+  "What the assistant says when the model ends a tool round without any text."
+  "Done.")
+
 (defn on-llm-complete-requested! [state {:keys [id #_chat-id #_user messages system-instructions tools] :as event-payload}]
   (log/trace
    ::on-llm-complete-requested!
@@ -71,7 +75,13 @@
                                          :event-trace event-trace}]]})
 
                          ;; type :finish
-             (let [content (clojure.string/join " " text)]
+             (let [;; After a tool round the model sometimes ends the turn with
+                   ;; no text at all: nothing would be shown or stored and the
+                   ;; chat looks frozen. Close the turn with a short reply.
+                   silent-after-tools? (and (> completion-step 1)
+                                            (clojure.string/blank? (clojure.string/join " " text)))
+                   text (if silent-after-tools? [empty-reply-after-tools] text)
+                   content (clojure.string/join " " text)]
                (tap> [:agents.domain.chat/llm-reply-received {:reply text}])
                            ;; Send final message to UI
                (inject-in-flow! {:state state
@@ -310,6 +320,40 @@
                                                                   :completion-step 1}
 
                                                     :content "final reply"}]]}]])))
+
+(tests
+ "A blank :finish after a tool round is replaced by a short reply, shown and stored"
+ (let [inject-in-flow-spy (spy/spy (fn [_]))
+       mock-state {:inject-in-flow! inject-in-flow-spy}]
+   (with-redefs [li/complete! (fn [opts]
+                                ((:on-message-received opts) {:type :finish :status nil :text [""]}))
+                 log/local-context (fn [] {:mulog/trace-id "test-trace"})]
+     (on-llm-complete-requested! mock-state {:id "test-id"
+                                             :event-trace {:ai-chat/id "test-chat-id"
+                                                           :completion-step 2}
+                                             :messages []
+                                             :tools []})
+     (->> (spy/calls inject-in-flow-spy)
+          (map (comp first :event first))
+          (map (fn [[event-name payload]] [event-name (or (:reply payload) (:content payload))]))
+          rest)
+     := [[:agents.domain.chat/llm-reply-received [empty-reply-after-tools]]
+         [:add-assistant-message empty-reply-after-tools]]))
+
+ "A blank :finish on the first step (no tools ran) is left alone and not stored"
+ (let [inject-in-flow-spy (spy/spy (fn [_]))
+       mock-state {:inject-in-flow! inject-in-flow-spy}]
+   (with-redefs [li/complete! (fn [opts]
+                                ((:on-message-received opts) {:type :finish :status nil :text [""]}))
+                 log/local-context (fn [] {:mulog/trace-id "test-trace"})]
+     (on-llm-complete-requested! mock-state {:id "test-id"
+                                             :event-trace {:ai-chat/id "test-chat-id"}
+                                             :messages []
+                                             :tools []})
+     (->> (spy/calls inject-in-flow-spy)
+          (map (comp first first :event first))
+          rest)
+     := [:agents.domain.chat/llm-reply-received])))
 
 (tests
  "Test on-prepare-tool-call callback"

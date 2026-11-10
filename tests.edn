@@ -4,8 +4,7 @@
     :kaocha.testable/id :unit
     :kaocha/ns-patterns ["$"]
     :kaocha/source-paths []
-    :kaocha/test-paths ["components/state.machines/src"
-                        "components/datastar/src"
+    :kaocha/test-paths ["components/datastar/src"
                         "components/llm/src"
                         "components/agents/src"]
     :kaocha.filter/skip-meta [:kaocha/skip]}]

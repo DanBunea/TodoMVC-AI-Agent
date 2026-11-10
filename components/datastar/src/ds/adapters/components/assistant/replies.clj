@@ -1,5 +1,6 @@
 (ns ds.adapters.components.assistant.replies
   (:require
+   [ds.adapters.components.assistant.loading :as loading]
    [clojure.string :as str]))
 
 (defn partial-reply [{:keys [reply]}]
@@ -16,14 +17,15 @@
   "Pure view: returns hiccup for a single user/assistant message (no broadcast wrapper)."
   [id role content]
   [:div.cs-12.cl-12
-   {:id (str "message-" id)}
+   {:id (str "message-" id)
+    "data-testid" (str "message-" role)}
    [:span {:style {:font-weight "600"}} (str role ": ")]
    [:span #_.secondary
     {:style {:font-size "var(--typography-small-regular-font-size)"}}
     content]])
 
 (defn message [id role content]
-  [:broadcast-elements!
+  [:patch
    (message-view id role content)
    {:d*/selector "#messages"
     :d*/patch-mode :d*/pm-append}])
@@ -33,15 +35,15 @@
 (defn llm-reply-requested [event-payload]
   (let [{:keys [event-trace]} event-payload
         chat-id (:ai-chat/id event-trace)]
-    [[:broadcast-loading chat-id]]))
+    [(loading/show-loading chat-id)]))
 
 (defn partial-llm-reply-received [event-payload]
   (let [{:keys [id reply status event-trace]} event-payload
         chat-id (:ai-chat/id event-trace)]
     (cond
       (= :started status)
-      [[:broadcast-hide-loading chat-id]
-       [:broadcast-elements!
+      [(loading/hide-loading chat-id)
+       [:patch
         [:div.cl-12.cs-12
          {:id (str "llm-partial-reply-" id)}
          [:span {:style {:font-weight "600"}} (str "assistant" ": ")]
@@ -50,7 +52,7 @@
          :d*/patch-mode :d*/pm-append}]]
 
       :else
-      [[:broadcast-elements!
+      [[:patch
         (partial-reply {:reply reply})
         {:d*/selector (str "#llm-partial-replies-" id)
          :d*/patch-mode :d*/pm-append}]])))
@@ -58,14 +60,15 @@
 (defn llm-reply-received [event-payload]
   (let [{:keys [id reply event-trace]} event-payload
         chat-id (:ai-chat/id event-trace)]
-    [[:broadcast-elements!
+    [[:patch
       []
       {:d*/selector (str "#llm-partial-reply-" id)
        :d*/patch-mode :d*/pm-remove}]
-     [:broadcast-elements!
+     [:patch
       [:div.cs-12.cl-12
        {:id           (str "message-" id)
-        :data-on-load (str "@post('/ds/nds/todomvc.todo-chat/" chat-id "/completion_done')")}
+        "data-testid" "message-assistant"
+        "data-init" (str "@post('/ds/nds/todomvc.todo-chat/" chat-id "/completion_done')")}
        [:span {:style {:font-weight "600"}} "assistant: "]
        [:span {:style {:font-size "var(--typography-small-regular-font-size)"}}
         (partial-reply {:reply (str/join "" reply)})]]

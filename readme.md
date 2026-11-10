@@ -12,6 +12,8 @@ An AI agent that helps you manage your todo list. Built on top of the popular [T
   </a>
 </p>
 
+The UI is server-rendered with [Datastar](https://data-star.dev/) through the [taia.ds](https://cljdoc.org/d/io.github.danbunea/taia.ds/0.2.0/doc/readme) library: components and their state machines live in `components/datastar/src/ds/adapters/components`, and the request pipeline, SSE push and `datastar.js` come from the library.
+
 ---
 
 ## Prerequisites
@@ -35,7 +37,7 @@ or:
 clj -A:dev -X dev/-main
 ```
 
-Then open the app at **[http://localhost:7777/ds/nds/todomvc.todomvc-page/t/init](http://localhost:7777/ds/nds/todomvc.todomvc-page/t/init)** (starter point).
+Then open the app at **[http://localhost:7777](http://localhost:7777)** (the same page is also served at `/ds/nds/todomvc.todomvc-page/t/init`).
 
 ### Start the server from the REPL
 
@@ -46,6 +48,24 @@ Open `development/src-dev/dev.cljc` in your editor, connect your REPL to the `de
 ```bash
 bb test
 ```
+
+### Run the end-to-end tests
+
+Playwright suites in `e2e/` (needs Node 18+). Each command installs the Playwright deps, starts its own copy of the app on port 7799 (so it can run next to `bb dev`), runs the specs and stops the app:
+
+```bash
+bb e2e-test
+```
+
+The UI suite (`e2e/tests`): the classic TodoMVC flow and the chat panel, with no LLM calls. Any browser console error fails a test.
+
+```bash
+bb agent-e2e-test
+```
+
+The agent suite (`e2e/tests-agent`): real OpenAI calls (needs `OPENAI_API_KEY`), asserting on outcomes such as the todo list and the chat turn finishing, not on the model's wording.
+
+Pass a spec name to run one file, and `--headed` to watch: `bb e2e-test todomvc --headed`. Each test runs as its own user (a `dev-user` cookie), so tests never share a todo list. The app's output goes to `e2e/server.log`.
 
 ### View traces (optional)
 

@@ -6,6 +6,7 @@
    #?(:clj [com.brunobonacci.mulog :as u])
    #?(:clj [agents.interface :refer [initialize-chat-agents!]])
    #?(:clj [ds.adapters.components.todomvc.todo-chat :as todo-chat])
+   #?(:clj [taia.ds.datastar.interface :as ds])
    #?(:clj [aero.core :refer [read-config]])
    #?(:clj [clojure.java.io :as io])
    #?(:clj [llm.interface :refer [check-openai-api-key!]])
@@ -20,7 +21,7 @@
    (do
      (def config
        {:host "0.0.0.0"
-        :port 7777
+        :port (or (some-> (System/getenv "PORT") parse-long) 7777) ; the e2e suite runs on 7799
         :resources-path "public/app"
         :manifest-path ; contains Electric compiled program's version so client and server stays in sync
         "public/app/js/manifest.edn"})
@@ -85,6 +86,10 @@
        (log/info "Initialize out listeners")
        (todo-chat/intialize-out-listener!)
        (log/info "Initialized out listeners")
+
+       ;; taia.ds resolves "<dir>.<name>" components under these prefixes
+       (ds/set-component-search-paths! ["ds.adapters.components"])
+       (future (ds/warm-component-cache! ["todomvc.todomvc-page" "todomvc.todomvc" "todomvc.todo-chat"]))
 
        (def server (jetty/start-server!
                     (fn [ring-request] #_(e/boot-server {} ui.core/Screen ring-request)

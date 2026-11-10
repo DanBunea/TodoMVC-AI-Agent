@@ -93,6 +93,7 @@
               :placeholder (if current-chat-id
                              "Continue your chat..."
                              "Ask AI to help with your todos...")
+              "data-testid" "open-chat"
               :read-only   true
               :style       {:width        "100%"
                             :padding      "12px 20px"
@@ -102,7 +103,7 @@
                             :outline      "none"
                             :background   "transparent"
                             :cursor       "pointer"}
-              :data-on-click click-action}]]))
+              "data-on:click" click-action}]]))
 
 (defn- chat-list-view
   "Renders the list-of-chats content area."
@@ -126,14 +127,14 @@
                         :transition "background 0.2s"}}
            ;; Clickable area for opening — sibling of delete button, not parent
            [:div {:style         {:flex "1" :cursor "pointer"}
-                  :data-on-click (str "$actionChatId='" (str chat-id) "';"
+                  "data-on:click" (str "$actionChatId='" (str chat-id) "';"
                                       (post-action component-id "open_chat"))}
             [:div {:style {:font-size "14px" :font-weight "500" :color "#333"}}
              (str "Chat " (subs (str chat-id) 0 8) "...")]
             [:div {:style {:font-size "12px" :color "#999" :margin-top "4px"}}
              preview-text]]
            ;; Delete button — sibling of the open-click div, no bubbling conflict
-           [:button {:data-on-click (str "$actionChatId='" (str chat-id) "';"
+           [:button {"data-on:click" (str "$actionChatId='" (str chat-id) "';"
                                          (post-action component-id "delete_chat"))
                      :type "button"
                      :style {:background "none" :border "none" :color "#cc9a9a"
@@ -141,7 +142,7 @@
             "\u00d7"]]))]
      [:div {:style {:text-align "center" :color "#999" :padding "20px"}}
       "No chats yet"])
-   [:button {:data-on-click (post-action component-id "cancel")
+   [:button {"data-on:click" (post-action component-id "cancel")
              :type "button"
              :style {:margin-top "10px" :padding "8px 16px" :background "#f5f5f5"
                      :border "1px solid #ddd" :border-radius "4px" :cursor "pointer"}}
@@ -150,7 +151,7 @@
 (defn- chat-modal-overlay
   "Renders the chat modal: a dark transparent overlay on the top 20%,
    and the chat panel occupying the bottom 80% of the screen.
-   Chat messages are loaded via data-on-load from the todo-chat component."
+   Chat messages are loaded via data-init from the todo-chat component."
   [component-id ctx]
   (let [state           (get ctx :state)
         current-chat-id (get-in ctx [:memory :selected :current-chat-id])
@@ -165,7 +166,7 @@
                               :height     "100vh"
                               :background "rgba(0, 0, 0, 0.4)"
                               :z-index    "1001"}
-              :data-on-click (post-action component-id "close")}]
+              "data-on:click" (post-action component-id "close")}]
 
        ;; Chat panel occupying bottom 80%
        [:div {:style {:position        "fixed"
@@ -189,13 +190,13 @@
                        :border-bottom   "1px solid #e6e6e6"}}
          ;; Left: new chat + list chats + chat info
          [:div {:style {:display "flex" :align-items "center" :gap "10px"}}
-          [:button {:data-on-click (post-action component-id "new_chat")
+          [:button {"data-on:click" (post-action component-id "new_chat")
                     :type "button"
                     :title "New chat"
                     :style {:background "none" :border "none" :font-size "20px"
                             :cursor "pointer" :padding "5px 10px" :color "#777"}}
            "+"]
-          [:button {:data-on-click (post-action component-id "list_chats")
+          [:button {"data-on:click" (post-action component-id "list_chats")
                     :type "button"
                     :title "List chats"
                     :style {:background "none" :border "none" :font-size "18px"
@@ -206,9 +207,10 @@
              (str "Chat: " (subs (str current-chat-id) 0 8) "...")
              "New Chat")]]
          ;; Right: close button
-         [:button {:data-on-click (post-action component-id "close")
+         [:button {"data-on:click" (post-action component-id "close")
                    :type "button"
                    :title "Close"
+                   "data-testid" "close-chat"
                    :style {:background "none" :border "none" :font-size "20px"
                            :cursor "pointer" :padding "5px 10px" :color "#777"}}
           "\u2715"]]
@@ -217,14 +219,14 @@
         (if (= state :list-of-chats-displayed)
           ;; --- List chats view ---
           (chat-list-view component-id chats)
-          ;; --- Chat messages view (loaded via data-on-load) ---
+          ;; --- Chat messages view (loaded via data-init) ---
           (let [chat-component-id (str current-chat-id)]
             [:div {:id           chat-component-id
                    :style        {:flex "1" :display "flex" :flex-direction "column" :overflow "hidden"}
                    :data-signals (charred/write-json-str
                                   {chat-component-id {:chat-id              (str current-chat-id)
                                                       :parent-component-id  component-id}})
-                   :data-on-load (str "@post('/ds/nds/todomvc.todo-chat/"
+                   "data-init" (str "@post('/ds/nds/todomvc.todo-chat/"
                                       chat-component-id "/init')")}]))]])))
 
 ;; ---------------------------------------------------------------------------
@@ -239,6 +241,7 @@
   (let [is-editing (= (str (:id todo)) (str editing-id))
         todo-id    (str (:id todo))]
     [:li {:id    (str "todo-" todo-id)
+          "data-testid" "todo-item"
           :style (merge
                   {:border-bottom "1px solid #ededed"
                    :position      "relative"}
@@ -247,6 +250,7 @@
      (if is-editing
        ;; ---- Edit mode ----
        [:input {:type      "text"
+                "data-testid" "edit-todo"
                 :value     (:text todo)
                 :autofocus true
                 :style     {:width      "100%"
@@ -256,18 +260,19 @@
                             :border     "1px solid #999"
                             :box-shadow "inset 0 -1px 5px 0 rgba(0,0,0,0.2)"
                             :box-sizing "border-box"}
-                :data-on-keydown
+                "data-on:keydown"
                 (str "$editText=el.value;"
-                     "event.key==='Enter'&&" (post-action component-id "update") ";"
-                     "event.key==='Escape'&&" (post-action component-id "cancel"))}]
+                     "evt.key==='Enter'&&" (post-action component-id "update") ";"
+                     "evt.key==='Escape'&&" (post-action component-id "cancel"))}]
 
        ;; ---- View mode ----
        [:div {:style {:display     "flex"
                       :align-items "center"}}
         ;; Toggle checkbox
         [:input {:type          "checkbox"
+                 "data-testid" "todo-toggle"
                  :checked       (boolean (:completed todo))
-                 :data-on-click (str "$selected.item-id='" todo-id "';"
+                 "data-on:click" (str "$selected.item-id='" todo-id "';"
                                      (post-action component-id "toggle"))
                  :style         {:width       "40px"
                                  :height      "40px"
@@ -275,7 +280,8 @@
                                  :cursor      "pointer"
                                  :flex-shrink "0"}}]
         ;; Label (double-click to edit)
-        [:label {:data-on-dblclick (str "$selected.item-id='" todo-id "';"
+        [:label {"data-testid" "todo-label"
+                 "data-on:dblclick" (str "$selected.item-id='" todo-id "';"
                                         (post-action component-id "edit"))
                  :style (merge
                          {:flex       "1"
@@ -288,7 +294,8 @@
                             :color           "#949494"}))}
          (:text todo)]
         ;; Delete button
-        [:button {:data-on-click (str "$selected.item-id='" todo-id "';"
+        [:button {"data-testid" "todo-delete"
+                  "data-on:click" (str "$selected.item-id='" todo-id "';"
                                       (post-action component-id "delete"))
                   :type  "button"
                   :style {:background "none"
@@ -310,7 +317,6 @@
    (item count, filter buttons, clear completed).
    Also includes floating chat button and chat modal overlay."
   [{:keys [component-id] :as ctx}]
-  ;; [[:broadcast-elements!
   (let [todos          (get-in ctx [:memory :todos] [])
         current-filter (get-in ctx [:memory :filter] "all")
         editing-id     (get-in ctx [:memory :selected :item-id])
@@ -343,7 +349,8 @@
                      :margin      "0"
                      :padding     "20px 0 10px 0"}}
         "todos"]
-       [:input {:placeholder     "What needs to be done?"
+       [:input {"data-testid" "new-todo"
+                :placeholder     "What needs to be done?"
                 :autofocus       true
                 :style           {:width        "100%"
                                   :padding      "16px 16px 16px 60px"
@@ -354,8 +361,8 @@
                                   :box-sizing   "border-box"
                                   :background   "rgba(0,0,0,0.003)"
                                   :box-shadow   "inset 0 -2px 1px rgba(0,0,0,0.03)"}
-                :data-on-keydown (str "$newTodoText=el.value;"
-                                      "if(event.key==='Enter'){el.value='';"
+                "data-on:keydown" (str "$newTodoText=el.value;"
+                                      "if(evt.key==='Enter'){el.value='';"
                                       (post-action component-id "add") "}")}]]
 
       ;; ---- Main section (visible only when todos exist) ----
@@ -367,8 +374,9 @@
                         :align-items "center"
                         :border-bottom "1px solid #ededed"}}
           [:input {:type          "checkbox"
+                   "data-testid" "toggle-all"
                    :checked       (zero? active)
-                   :data-on-click (post-action component-id "toggle_all")
+                   "data-on:click" (post-action component-id "toggle_all")
                    :style         {:width  "40px"
                                    :height "40px"
                                    :margin "0 0 0 10px"
@@ -395,7 +403,7 @@
                           :font-size       "14px"
                           :border-top      "1px solid #e6e6e6"}}
          ;; Items left
-         [:span
+         [:span {"data-testid" "remaining"}
           [:strong (str active)]
           (str " item" (when (not= active 1) "s") " left")]
 
@@ -407,7 +415,8 @@
                        :gap        "4px"}}
           (for [[label value] [["All" "all"] ["Active" "active"] ["Completed" "completed"]]]
             [:li
-             [:a {:data-on-click (str "$actionFilter='" value "';"
+             [:a {"data-testid" (str "filter-" value)
+                  "data-on:click" (str "$actionFilter='" value "';"
                                       (post-action component-id "filter"))
                   :style (merge
                           {:cursor        "pointer"
@@ -422,7 +431,8 @@
 
          ;; Clear completed
          (when (pos? completed)
-           [:button {:data-on-click (post-action component-id "clear_completed")
+           [:button {"data-testid" "clear-completed"
+                     "data-on:click" (post-action component-id "clear_completed")
                      :type  "button"
                      :style {:background "none"
                              :border     "none"
