@@ -51,7 +51,7 @@
         babashka/fs {:mvn/version "0.5.26"}
 
         ;; datastar components, handlers, state machines + datastar.js (RC.8)
-        io.github.danbunea/taia.ds {:mvn/version "0.2.0"}
+        io.github.danbunea/taia.ds {:mvn/version "0.4.0"}
         com.cnuernber/charred      {:mvn/version "1.034"}}
 
  :aliases {:dev

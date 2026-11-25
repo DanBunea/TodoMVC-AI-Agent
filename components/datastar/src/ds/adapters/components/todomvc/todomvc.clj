@@ -219,15 +219,23 @@
         (if (= state :list-of-chats-displayed)
           ;; --- List chats view ---
           (chat-list-view component-id chats)
-          ;; --- Chat messages view (loaded via data-init) ---
-          (let [chat-component-id (str current-chat-id)]
-            [:div {:id           chat-component-id
-                   :style        {:flex "1" :display "flex" :flex-direction "column" :overflow "hidden"}
-                   :data-signals (charred/write-json-str
-                                  {chat-component-id {:chat-id              (str current-chat-id)
-                                                      :parent-component-id  component-id}})
-                   "data-init" (str "@post('/ds/nds/todomvc.todo-chat/"
-                                      chat-component-id "/init')")}]))]])))
+          ;; --- Chat messages view: a connected component ---
+          ;; The wrapper opens the chat's SSE stream (and its component flow);
+          ;; the agent's replies are server events on that flow. The wrapper
+          ;; is never morphed by the chat itself, so data-init and the
+          ;; reconnect hook stay; the chat renders into the inner div.
+          (let [chat-component-id (str current-chat-id)
+                connect           (str "@get('/ds/nds-connect/todomvc.todo-chat/"
+                                       chat-component-id "/init')")]
+            [:div {:id                    (str "chat-stream-" chat-component-id)
+                   :style                 {:flex "1" :display "flex" :flex-direction "column" :overflow "hidden"}
+                   :data-signals          (charred/write-json-str
+                                           {chat-component-id {:chat-id             (str current-chat-id)
+                                                               :parent-component-id component-id}})
+                   "data-init"            connect
+                   "data-on:ds-reconnect" connect}
+             [:div {:id    chat-component-id
+                    :style {:flex "1" :display "flex" :flex-direction "column" :overflow "hidden"}}]]))]])))
 
 ;; ---------------------------------------------------------------------------
 ;; Sub-components

@@ -5,7 +5,7 @@
    #?(:clj [clojure.tools.logging :as log])
    #?(:clj [com.brunobonacci.mulog :as u])
    #?(:clj [agents.interface :refer [initialize-chat-agents!]])
-   #?(:clj [ds.adapters.components.todomvc.todo-chat :as todo-chat])
+   #?(:clj [ds.adapters.handlers.agent-output-handler :as aoh])
    #?(:clj [taia.ds.datastar.interface :as ds])
    #?(:clj [aero.core :refer [read-config]])
    #?(:clj [clojure.java.io :as io])
@@ -84,7 +84,7 @@
        (log/info "Initialized agents")
 
        (log/info "Initialize out listeners")
-       (todo-chat/intialize-out-listener!)
+       (aoh/initialize-agent-listener! :todomvc) ; agent output → send-event! to the chat
        (log/info "Initialized out listeners")
 
        ;; taia.ds resolves "<dir>.<name>" components under these prefixes
