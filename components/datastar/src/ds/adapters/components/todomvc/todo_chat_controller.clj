@@ -7,7 +7,9 @@
    [clojure.core.async :refer [go >!]]
    [logging.interface :as log]
    [agents.interface :refer [agents]]
-   [agents.use-cases.chat.todomvc-agent :as todomvc-agent])
+   [agents.use-cases.chat.todomvc-agent :as todomvc-agent]
+   [hyperfiddle.rcf :refer [tests]]
+   [taia.ds.state-machines.interface :as sm])
   (:import (java.util UUID)))
 
 (defn- generate-uuid
@@ -15,9 +17,26 @@
   []
   (str (UUID/randomUUID)))
 
+(defn- agent-reply
+  "A server event from the agent: its params ({:agent-event :payload}) go in the
+   ctx for the render fn, which turns them into patches."
+  [ctx params]
+  (assoc ctx :agent-reply params))
+
 (def machine
   {:id :todo-chat
    :initial :init
+   ;; The agent's output, as the server events
+   ;; `ds.adapters.handlers.agent-output-handler` sends to the chat's flow.
+   ;; A server event has no request and no signals: it starts from :init, so
+   ;; they are handled here, at the machine level, in any state.
+   :on {:LLM_REPLY_REQUESTED              {:actions agent-reply}
+        :PARTIAL_REASONING_REPLY_RECEIVED {:actions agent-reply}
+        :PARTIAL_LLM_TOOLS_REPLY_RECEIVED {:actions agent-reply}
+        :PARTIAL_LLM_REPLY_RECEIVED       {:actions agent-reply}
+        :LLM_TOOLS_REPLY_RECEIVED         {:actions agent-reply}
+        :TOOL_APPLIED                     {:actions agent-reply}
+        :LLM_REPLY_RECEIVED               {:actions agent-reply}}
    :states
    {:init
     {:on {:INIT {:target :loading-messages}}}
@@ -37,6 +56,9 @@
     :displayed
     {:on
      {:INIT {:target :loading-messages}
+
+      ;; a completion that ends after a reconnect reloaded the chat
+      :COMPLETION_DONE {:target :loading-messages}
 
       :SEND_MESSAGE {:target :sending-message
                      :actions (fn [ctx event-params]
@@ -88,6 +110,9 @@
     {:on
      {:COMPLETION_DONE {:target :loading-messages}
 
+      ;; the reconnect watchdog re-sends INIT in whatever state the chat is
+      :INIT {:target :loading-messages}
+
       :STOP_COMPLETION_REQUESTED {:target :loading-messages
                                   :actions (fn [ctx _]
                                              (let [logged-user (:logged-user ctx)
@@ -102,3 +127,16 @@
                                                                          :user        logged-user
                                                                          :message-id  message-id}}])))
                                                ctx))}}}}})
+
+(tests
+ "an agent server event starts from :init (no signals) and puts its params in
+  the ctx for the render, staying where it is"
+ (sm/transition machine
+                {:state :init :memory {}}
+                [:PARTIAL_LLM_REPLY_RECEIVED {:agent-event :agents.domain.chat/partial-llm-reply-received
+                                              :payload     {:id "m1"}}]
+                {:state-key :state})
+ := {:state       :init
+     :memory      {}
+     :agent-reply {:agent-event :agents.domain.chat/partial-llm-reply-received
+                   :payload     {:id "m1"}}})

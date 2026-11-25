@@ -43,6 +43,19 @@ test('asking to mark a todo done completes it', async ({ page, context }) => {
   await expect(todo(page, 'water the plants').getByTestId('todo-toggle')).toBeChecked();
 });
 
+test('closing and reopening the chat shows its messages', async ({ page, context }) => {
+  await openAsFreshUser(page, context);
+  await page.getByTestId('open-chat').click();
+  await ask(page, 'add a todo "reopen me"');
+
+  await page.getByTestId('close-chat').click();
+  await page.getByTestId('open-chat').click();
+
+  await expect(page.getByTestId('message-user')).toContainText('add a todo "reopen me"');
+  await expect(page.getByTestId('message-assistant')).toHaveCount(1);
+  await expect(page.getByText('No messages yet. Start a conversation!')).toHaveCount(0);
+});
+
 test('a follow-up message in the same chat works', async ({ page, context }) => {
   await openAsFreshUser(page, context);
   await page.getByTestId('open-chat').click();

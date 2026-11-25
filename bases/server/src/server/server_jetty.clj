@@ -122,8 +122,11 @@ with target specified by map `m`. Target values are coerced to string with `str`
         (handler (assoc-in request [:params :logged-user] logged-user) respond raise))))))
 
 (def ^:private ds-middleware
-  [wrap-keyword-params
-   rmparams/parameters-middleware
+  ;; taia.ds reads :params (keywordized): the logged user (connections are keyed
+  ;; by it), the event's query/form params, and, for an @get, the tab's signals
+  ;; as the `datastar` query param (an @post carries them in the JSON body)
+  [rmparams/parameters-middleware
+   wrap-keyword-params
    wrap-logged-user
    #(wrap-session % wrap-session-options)
    ;; #(wrap-auth0-authentication % (:keycloak config))
@@ -156,6 +159,8 @@ with target specified by map `m`. Target values are coerced to string with `str`
        ["/:component/:component-id/:controller/:event" {:handler ds/handler-component-event}]
        ["/:component/:component-id/:event" {:handler ds/handler-component-event}]]
       ["/nds-connect"
+       ;; any method: every request opens a connection (an SSE stream and the
+       ;; flow ds/send-event! reaches); clicks go to /ds/nds
        ["/:component/:component-id/:event" {:handler ds/handler-connected-component-connect}]]]]
     {:data {:muuntaja   m/instance
             :middleware [rrmm/format-middleware]}})
