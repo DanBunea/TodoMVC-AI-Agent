@@ -12,5 +12,9 @@
                   :requires ([e2e])
                   :task (e2e/main :agent *command-line-args*)}
 
+  agent-flow-gif {:doc "Regenerate .docs/media/agent-flow.svg from scripts/agent_flow_svg.clj, then render .docs/media/agent-flow.gif (needs npm ci in e2e/ and ffmpeg)"
+                  :task (do (shell "bb scripts/agent_flow_svg.clj")
+                            (shell {:dir "e2e"} "node render-flow.mjs ../.docs/media/agent-flow.svg ../.docs/media/agent-flow.gif 10 52"))}
+
   format:check   (shell "cljfmt check")
   format         (shell "cljfmt fix")}}

@@ -14,6 +14,12 @@ An AI agent that helps you manage your todo list. Built on top of the popular [T
 
 The UI is server-rendered with [Datastar](https://data-star.dev/) through the [taia.ds](https://cljdoc.org/d/io.github.danbunea/taia.ds/0.2.0/doc/readme) library: components and their state machines live in `components/datastar/src/ds/adapters/components`, and the request pipeline, SSE push and `datastar.js` come from the library.
 
+### How a chat message travels
+
+![A chat message: the browser POSTs send_message into the chat's taia.ds flow; its controller puts user-message-sent on the agent flow's in-chan; ui, llm and tools work with the model (its callbacks come back through callback-chan); every agent event leaves the agent's out-chan, goes back into the chat's connection flow with ds/send-event!, and is pushed down the open SSE stream](.docs/media/agent-flow.gif)
+
+Two flows behind one chat. The chat is a taia.ds connected component (controller → view, with an SSE stream the page keeps open); the agent is a `core.async.flow` of its own (`ui`, `llm`, `tools`, with the model outside it). They are joined by two puts: the chat controller's `(>! in-chan [:user-message-sent …])`, and `agent-output-handler`'s `ds/send-event!` back into the chat's connection. Regenerate the animation with `bb agent-flow-gif` (source: `scripts/agent_flow_svg.clj`).
+
 ---
 
 ## Prerequisites
