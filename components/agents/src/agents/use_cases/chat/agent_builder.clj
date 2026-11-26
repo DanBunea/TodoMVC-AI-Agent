@@ -91,7 +91,8 @@
    1. **External -> UI -> LLM**: User messages flow from in-chan through UI to LLM
    2. **External -> UI -> Tools**: State requests (user-connected, etc.)
    3. **LLM -> Tools**: Tool execution requests
-   4. **LLM -> UI -> External**: Streaming responses via flow injection to out-chan
+   4. **LLM -> UI -> External**: Streaming responses to out-chan; completion callbacks
+      re-enter the :llm proc through its own :from-completion in-port
    5. **Tools -> UI -> External**: Tool results to out-chan
    6. **Tools -> LLM**: Tool results for continued completion
 
@@ -117,29 +118,25 @@
   (log/trace
    ::create-chat-agent-flow
    [:config config]
-   (let [flow-ref (atom nil)
-         on-user-message (make-on-user-message-fn system-instructions-fn tool-descriptions-fn)
-         on-execute-tools (make-on-execute-tools execute-tools-fn system-instructions-fn tool-descriptions-fn)
-         f (flow/create-flow
-            {:procs {:llm   {:proc (flow/process #'llm/complete!)
-                             :args {:flow-ref flow-ref
-                                    :config config}}
-                     :ui    {:proc (flow/process #'ui/ui!)
-                             :args {:config config}}
-                     :tools {:proc (flow/process #'imt/run-tool!)
-                             :args {:load-chat-messages-fn load-chat-messages-fn
-                                    :add-chat-message-fn add-chat-message-fn
-                                    :execute-tools-fn on-execute-tools
-                                    :process-user-message-fn on-user-message
-                                    :locale locale}}}
-             :conns [[[:ui :to-llm]        [:llm :from-ui]]
-                     [[:ui :to-tools]      [:tools :from-ui]]
-                     [[:llm :to-ui]        [:ui :from-llm]]
-                     [[:llm :to-tools]     [:tools :from-llm]]
-                     [[:tools :to-ui]      [:ui :from-tools]]
-                     [[:tools :to-llm]     [:llm :from-tools]]]})]
-     (reset! flow-ref f)
-     f)))
+   (let [on-user-message (make-on-user-message-fn system-instructions-fn tool-descriptions-fn)
+         on-execute-tools (make-on-execute-tools execute-tools-fn system-instructions-fn tool-descriptions-fn)]
+     (flow/create-flow
+      {:procs {:llm   {:proc (flow/process #'llm/complete!)
+                       :args {:config config}}
+               :ui    {:proc (flow/process #'ui/ui!)
+                       :args {:config config}}
+               :tools {:proc (flow/process #'imt/run-tool!)
+                       :args {:load-chat-messages-fn load-chat-messages-fn
+                              :add-chat-message-fn add-chat-message-fn
+                              :execute-tools-fn on-execute-tools
+                              :process-user-message-fn on-user-message
+                              :locale locale}}}
+       :conns [[[:ui :to-llm]        [:llm :from-ui]]
+               [[:ui :to-tools]      [:tools :from-ui]]
+               [[:llm :to-ui]        [:ui :from-llm]]
+               [[:llm :to-tools]     [:tools :from-llm]]
+               [[:tools :to-ui]      [:ui :from-tools]]
+               [[:tools :to-llm]     [:llm :from-tools]]]}))))
 
 (defn create-and-start!
   "Creates a chat agent flow, starts it, and resumes it.
